@@ -1,0 +1,188 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// SCHEMA operación
+
+model CategoriaVehiculo {
+  categoriaVehiculoId Int    @id @default(autoincrement())
+  codigo              String @unique
+  nombre              String
+
+  vehiculos Vehiculo[]
+}
+
+model Area {
+  areaId Int    @id @default(autoincrement())
+  nombre String
+
+  asignaciones Asignacion[]
+}
+
+model Vehiculo {
+  vehiculoId       Int    @id @default(autoincrement())
+  codigoPatrimonio String @unique
+  placa            String @unique
+
+  categoriaVehiculoId Int
+  categoriaVehiculo   CategoriaVehiculo @relation(fields: [categoriaVehiculoId], references: [categoriaVehiculoId])
+
+  valorNuevo    Decimal @db.Decimal(12, 2)
+  valorResidual Decimal @db.Decimal(12, 2)
+  vidaUtilAnios Int
+  estado        String
+
+  movimientos  MovimientoDiario[]
+  asignaciones Asignacion[]
+  inventarios  InventarioUnidad[]
+  llantas      Llanta[]
+
+  costosFijos     CostoFijoMensual[]
+  costosPromedio  CostoPromedioAnual[]
+  costosOperacion CostoOperacionMensual[]
+}
+
+model Conductor {
+  conductorId Int     @id @default(autoincrement())
+  documento   String  @unique
+  nombre      String
+  osActivo    Boolean
+
+  movimientos MovimientoDiario[]
+}
+
+model MovimientoDiario {
+  movimientoId Int @id @default(autoincrement())
+
+  vehiculoId  Int
+  conductorId Int
+
+  vehiculo  Vehiculo  @relation(fields: [vehiculoId], references: [vehiculoId])
+  conductor Conductor @relation(fields: [conductorId], references: [conductorId])
+
+  fecha DateTime
+
+  kmSalida  Float
+  kmLlegada Float
+
+  horas   Float
+  destino String
+}
+
+model Asignacion {
+  asignacionId Int @id @default(autoincrement())
+
+  vehiculoId Int
+  areaId     Int
+
+  vehiculo Vehiculo @relation(fields: [vehiculoId], references: [vehiculoId])
+  area     Area     @relation(fields: [areaId], references: [areaId])
+
+  fechaInicio DateTime
+}
+
+//SCHEMA inventario
+
+model InventarioUnidad {
+  inventarioId Int @id @default(autoincrement())
+
+  vehiculoId Int
+  vehiculo   Vehiculo @relation(fields: [vehiculoId], references: [vehiculoId])
+
+  fecha              DateTime
+  lecturaVelocimetro Float
+  estadoGeneral      String
+}
+
+model Conjunto {
+  conjuntoId Int @id @default(autoincrement())
+
+  codigo String @unique
+  tipo   String
+  estado String
+}
+
+model Llanta {
+  llantaId Int @id @default(autoincrement())
+
+  codigo String @unique
+
+  vehiculoId Int
+  vehiculo   Vehiculo @relation(fields: [vehiculoId], references: [vehiculoId])
+
+  dimension String
+  posicion  String
+  estado    String
+}
+
+// SCHEMA costos
+
+model Indicador {
+  indicadorId Int @id @default(autoincrement())
+
+  codigo String @unique
+  nombre String
+
+  valor   Float
+  periodo String
+}
+
+model ParametroUtilizacion {
+  parametroId Int @id @default(autoincrement())
+
+  categoriaVehiculoId Int
+
+  kmParametro    Float
+  horasParametro Float
+}
+
+model CostoFijoMensual {
+  cfmId Int @id @default(autoincrement())
+
+  vehiculoId Int
+  vehiculo   Vehiculo @relation(fields: [vehiculoId], references: [vehiculoId])
+
+  mesAnio String
+
+  cfp Decimal @db.Decimal(12, 2)
+  cfv Decimal @db.Decimal(12, 2)
+}
+
+model CostoPromedioAnual {
+  vehiculoId Int @id
+
+  vehiculo Vehiculo @relation(fields: [vehiculoId], references: [vehiculoId])
+
+  eniaN              Decimal @db.Decimal(12, 2)
+  depreciacion       Decimal @db.Decimal(12, 2)
+  remanenteAcumulado Decimal @db.Decimal(12, 2)
+
+  costoPromedioAnual Decimal @db.Decimal(12, 2)
+}
+
+model CostoOperacionMensual {
+  comId Int @id @default(autoincrement())
+
+  vehiculoId Int
+  vehiculo   Vehiculo @relation(fields: [vehiculoId], references: [vehiculoId])
+
+  mesAnio String
+
+  kmHoras Float
+
+  cvv Decimal @db.Decimal(12, 2)
+  ckv Decimal @db.Decimal(12, 2)
+
+  consumo Decimal @db.Decimal(12, 2)
+  iuv     Decimal @db.Decimal(12, 2)
+}
