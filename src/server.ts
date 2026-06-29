@@ -11,6 +11,8 @@ import movimientosRoutes from './routes/movimientos';
 import abastecimientosRoutes from './routes/abastecimientos';
 import mantenimientosRoutes from './routes/mantenimientos';
 import usuariosRoutes from './routes/usuarios';
+import costosRoutes from './routes/costos';
+import indicadoresRoutes from './routes/indicadores';
 
 const app = express();
 
@@ -35,6 +37,8 @@ app.use('/api/movimientos', movimientosRoutes);
 app.use('/api/abastecimientos', abastecimientosRoutes);
 app.use('/api/mantenimientos', mantenimientosRoutes);
 app.use('/api/usuarios', usuariosRoutes);
+app.use('/api/costos', costosRoutes);
+app.use('/api/indicadores', indicadoresRoutes);
 
 const PORT = process.env.PORT || 3000;
 

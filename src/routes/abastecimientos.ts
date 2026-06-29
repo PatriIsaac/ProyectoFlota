@@ -31,6 +31,28 @@ router.post('/', async (req, res) => {
     }
 });
 
+// GET /api/abastecimientos/vehiculo/:id/rendimiento -> IA122 01 (km/galón) de la unidad
+router.get('/vehiculo/:id/rendimiento', async (req, res) => {
+    try {
+        const vehiculoId = Number(req.params.id);
+        const movs = await prisma.movimientoDiario.findMany({ where: { vehiculoId } });
+        const abast = await prisma.abastecimiento.findMany({ where: { vehiculoId } });
+        const totalKm = movs.reduce((s, m) => s + Math.max(m.kmLlegada - m.kmSalida, 0), 0);
+        const totalGalones = abast.reduce((s, a) => s + a.galones, 0);
+        const costoTotal = abast.reduce((s, a) => s + Number(a.costo), 0);
+        res.json({
+            vehiculoId,
+            totalKm,
+            totalGalones,
+            costoTotal,
+            rendimiento: totalGalones > 0 ? totalKm / totalGalones : 0, // km/galón
+            costoPorKm: totalKm > 0 ? costoTotal / totalKm : 0,
+        });
+    } catch (error) {
+        res.status(500).json({ error: 'Error' });
+    }
+});
+
 router.patch('/:id', async (req, res) => {
     try {
         const actualizado = await prisma.abastecimiento.update({
