@@ -12,62 +12,10 @@ datasource db {
   provider = "postgresql"
 }
 
-model CategoriaVehiculo {
-  categoriaVehiculoId   Int                    @id @default(autoincrement())
-  codigo                String                 @unique
-  nombre                String
-  parametrosUtilizacion ParametroUtilizacion[]
-  vehiculos             Vehiculo[]
-}
-
 model Area {
-  areaId       Int          @id @default(autoincrement())
-  nombre       String
-  asignaciones Asignacion[]
-}
-
-model Vehiculo {
-  vehiculoId                    Int                            @id @default(autoincrement())
-  codigoPatrimonio              String                         @unique
-  placa                         String                         @unique
-  categoriaVehiculoId           Int
-  valorNuevo                    Decimal                        @db.Decimal(12, 2)
-  valorResidual                 Decimal                        @db.Decimal(12, 2)
-  vidaUtilAnios                 Int
-  estado                        String
-  asignaciones                  Asignacion[]
-  conjuntos                     Conjunto[]
-  costosFijos                   CostoFijoMensual[]
-  costosOperacion               CostoOperacionMensual[]
-  costoPromedio                 CostoPromedioAnual?
-  inventarios                   InventarioUnidad[]
-  llantas                       Llanta[]
-  movimientos                   MovimientoDiario[]
-  ordenServicios                OrdenServicio[]
-  registroMensualMantenimientos RegistroMensualMantenimiento[]
-  categoriaVehiculo             CategoriaVehiculo              @relation(fields: [categoriaVehiculoId], references: [categoriaVehiculoId])
-  abastecimientos               Abastecimiento[]
-}
-
-model Conductor {
-  conductorId Int                @id @default(autoincrement())
-  documento   String             @unique
-  nombre      String
-  osActivo    Boolean
-  movimientos MovimientoDiario[]
-}
-
-model MovimientoDiario {
-  movimientoId Int       @id @default(autoincrement())
-  vehiculoId   Int
-  conductorId  Int
-  fecha        DateTime
-  kmSalida     Float
-  kmLlegada    Float
-  horas        Float
-  destino      String
-  conductor    Conductor @relation(fields: [conductorId], references: [conductorId])
-  vehiculo     Vehiculo  @relation(fields: [vehiculoId], references: [vehiculoId])
+  areaId     Int          @id @default(autoincrement())
+  nombre     String
+  Asignacion Asignacion[]
 }
 
 model Asignacion {
@@ -76,17 +24,25 @@ model Asignacion {
   areaId       Int
   fechaInicio  DateTime
   fechaFin     DateTime?
-  area         Area      @relation(fields: [areaId], references: [areaId])
-  vehiculo     Vehiculo  @relation(fields: [vehiculoId], references: [vehiculoId])
+  Area         Area      @relation(fields: [areaId], references: [areaId])
+  Vehiculo     Vehiculo  @relation(fields: [vehiculoId], references: [vehiculoId])
 }
 
-model InventarioUnidad {
-  inventarioId       Int      @id @default(autoincrement())
-  vehiculoId         Int
-  fecha              DateTime
-  lecturaVelocimetro Float
-  estadoGeneral      String
-  vehiculo           Vehiculo @relation(fields: [vehiculoId], references: [vehiculoId])
+model CategoriaVehiculo {
+  categoriaVehiculoId  Int                    @id @default(autoincrement())
+  codigo               String                 @unique
+  nombre               String
+  ParametroUtilizacion ParametroUtilizacion[]
+  Vehiculo             Vehiculo[]
+}
+
+model Conductor {
+  conductorId       Int                 @id @default(autoincrement())
+  documento         String              @unique
+  nombre            String
+  osActivo          Boolean
+  DocumentoPersonal DocumentoPersonal[]
+  MovimientoDiario  MovimientoDiario[]
 }
 
 model Conjunto {
@@ -95,33 +51,7 @@ model Conjunto {
   tipo       String
   estado     String
   vehiculoId Int
-  vehiculo   Vehiculo @relation(fields: [vehiculoId], references: [vehiculoId])
-}
-
-model Llanta {
-  llantaId   Int      @id @default(autoincrement())
-  codigo     String   @unique
-  vehiculoId Int
-  dimension  String
-  posicion   String
-  estado     String
-  vehiculo   Vehiculo @relation(fields: [vehiculoId], references: [vehiculoId])
-}
-
-model Indicador {
-  indicadorId Int    @id @default(autoincrement())
-  codigo      String @unique
-  nombre      String
-  valor       Float
-  periodo     String
-}
-
-model ParametroUtilizacion {
-  parametroId         Int               @id @default(autoincrement())
-  categoriaVehiculoId Int
-  kmParametro         Float
-  horasParametro      Float
-  categoriaVehiculo   CategoriaVehiculo @relation(fields: [categoriaVehiculoId], references: [categoriaVehiculoId])
+  Vehiculo   Vehiculo @relation(fields: [vehiculoId], references: [vehiculoId])
 }
 
 model CostoFijoMensual {
@@ -130,16 +60,7 @@ model CostoFijoMensual {
   mesAnio    String
   cfp        Decimal  @db.Decimal(12, 2)
   cfv        Decimal  @db.Decimal(12, 2)
-  vehiculo   Vehiculo @relation(fields: [vehiculoId], references: [vehiculoId])
-}
-
-model CostoPromedioAnual {
-  vehiculoId         Int      @id
-  eniaN              Decimal  @db.Decimal(12, 2)
-  depreciacion       Decimal  @db.Decimal(12, 2)
-  remanenteAcumulado Decimal  @db.Decimal(12, 2)
-  costoPromedioAnual Decimal  @db.Decimal(12, 2)
-  vehiculo           Vehiculo @relation(fields: [vehiculoId], references: [vehiculoId])
+  Vehiculo   Vehiculo @relation(fields: [vehiculoId], references: [vehiculoId])
 }
 
 model CostoOperacionMensual {
@@ -151,53 +72,115 @@ model CostoOperacionMensual {
   ckv        Decimal  @db.Decimal(12, 2)
   consumo    Decimal  @db.Decimal(12, 2)
   iuv        Decimal  @db.Decimal(12, 2)
-  vehiculo   Vehiculo @relation(fields: [vehiculoId], references: [vehiculoId])
+  Vehiculo   Vehiculo @relation(fields: [vehiculoId], references: [vehiculoId])
 }
 
-model Abastecimiento {
-  abastecimientoId Int      @id @default(autoincrement())
-  numeroOrden      String   @unique
-  vehiculoId       Int
-  fecha            DateTime
-  tipoCombustible  String
-  galones          Float
-  costo            Decimal  @db.Decimal(12, 2)
-  kmVelocimetro    Float
-  vehiculo         Vehiculo @relation(fields: [vehiculoId], references: [vehiculoId])
-
-  @@map("abastecimiento")
-}
-
-model TipoMantenimiento {
-  tipoId      Int             @id @default(autoincrement())
-  codigo      String          @unique
-  descripcion String
-  ordenes     OrdenServicio[]
-}
-
-model OrdenServicio {
-  ordenId      Int                         @id @default(autoincrement())
-  numero       String                      @unique
-  vehiculoId   Int
-  tipoId       Int
-  taller       String
-  fechaEntrada DateTime
-  fechaSalida  DateTime?
-  kilometraje  Float
-  detalles     DetalleCostoMantenimiento[]
-  tipo         TipoMantenimiento           @relation(fields: [tipoId], references: [tipoId])
-  vehiculo     Vehiculo                    @relation(fields: [vehiculoId], references: [vehiculoId])
-  solicitudes  SolicitudMaterial[]
+model CostoPromedioAnual {
+  vehiculoId         Int      @id
+  eniaN              Decimal  @db.Decimal(12, 2)
+  depreciacion       Decimal  @db.Decimal(12, 2)
+  remanenteAcumulado Decimal  @db.Decimal(12, 2)
+  costoPromedioAnual Decimal  @db.Decimal(12, 2)
+  Vehiculo           Vehiculo @relation(fields: [vehiculoId], references: [vehiculoId])
 }
 
 model DetalleCostoMantenimiento {
-  detalleId Int           @id @default(autoincrement())
-  ordenId   Int
-  manoObra  Decimal       @db.Decimal(12, 2)
-  repuestos Decimal       @db.Decimal(12, 2)
-  otros     Decimal       @db.Decimal(12, 2)
-  origen    String
-  orden     OrdenServicio @relation(fields: [ordenId], references: [ordenId])
+  detalleId     Int           @id @default(autoincrement())
+  ordenId       Int
+  manoObra      Decimal       @db.Decimal(12, 2)
+  repuestos     Decimal       @db.Decimal(12, 2)
+  otros         Decimal       @db.Decimal(12, 2)
+  origen        String
+  OrdenServicio OrdenServicio @relation(fields: [ordenId], references: [ordenId])
+}
+
+model DetalleSolicitud {
+  detalleId         Int               @id @default(autoincrement())
+  solicitudId       Int
+  materialId        Int
+  cantidad          Float
+  Material          Material          @relation(fields: [materialId], references: [materialId])
+  SolicitudMaterial SolicitudMaterial @relation(fields: [solicitudId], references: [solicitudId])
+}
+
+model DocumentoPersonal {
+  documentoId Int       @id @default(autoincrement())
+  conductorId Int
+  tipo        String
+  vigencia    DateTime
+  fechaSubida DateTime  @default(now())
+  Conductor   Conductor @relation(fields: [conductorId], references: [conductorId])
+}
+
+model Indicador {
+  indicadorId Int    @id @default(autoincrement())
+  codigo      String @unique
+  nombre      String
+  valor       Float
+  periodo     String
+}
+
+model InventarioUnidad {
+  inventarioId       Int      @id @default(autoincrement())
+  vehiculoId         Int
+  fecha              DateTime
+  lecturaVelocimetro Float
+  estadoGeneral      String
+  Vehiculo           Vehiculo @relation(fields: [vehiculoId], references: [vehiculoId])
+}
+
+model Llanta {
+  llantaId   Int      @id @default(autoincrement())
+  codigo     String   @unique
+  vehiculoId Int
+  dimension  String
+  posicion   String
+  estado     String
+  Vehiculo   Vehiculo @relation(fields: [vehiculoId], references: [vehiculoId])
+}
+
+model Material {
+  materialId       Int                @id @default(autoincrement())
+  codigo           String             @unique
+  nombre           String
+  unidad           String
+  DetalleSolicitud DetalleSolicitud[]
+}
+
+model MovimientoDiario {
+  movimientoId Int       @id @default(autoincrement())
+  vehiculoId   Int
+  conductorId  Int
+  fecha        DateTime
+  kmSalida     Float
+  kmLlegada    Float
+  horas        Float
+  destino      String
+  Conductor    Conductor @relation(fields: [conductorId], references: [conductorId])
+  Vehiculo     Vehiculo  @relation(fields: [vehiculoId], references: [vehiculoId])
+}
+
+model OrdenServicio {
+  ordenId                   Int                         @id @default(autoincrement())
+  numero                    String                      @unique
+  vehiculoId                Int
+  tipoId                    Int
+  taller                    String
+  fechaEntrada              DateTime
+  fechaSalida               DateTime?
+  kilometraje               Float
+  DetalleCostoMantenimiento DetalleCostoMantenimiento[]
+  TipoMantenimiento         TipoMantenimiento           @relation(fields: [tipoId], references: [tipoId])
+  Vehiculo                  Vehiculo                    @relation(fields: [vehiculoId], references: [vehiculoId])
+  SolicitudMaterial         SolicitudMaterial[]
+}
+
+model ParametroUtilizacion {
+  parametroId         Int               @id @default(autoincrement())
+  categoriaVehiculoId Int
+  kmParametro         Float
+  horasParametro      Float
+  CategoriaVehiculo   CategoriaVehiculo @relation(fields: [categoriaVehiculoId], references: [categoriaVehiculoId])
 }
 
 model RegistroMensualMantenimiento {
@@ -206,32 +189,94 @@ model RegistroMensualMantenimiento {
   mesAnio    String
   propio     Decimal  @db.Decimal(12, 2)
   terceros   Decimal  @db.Decimal(12, 2)
-  vehiculo   Vehiculo @relation(fields: [vehiculoId], references: [vehiculoId])
+  Vehiculo   Vehiculo @relation(fields: [vehiculoId], references: [vehiculoId])
 }
 
-model Material {
-  materialId Int                @id @default(autoincrement())
-  codigo     String             @unique
-  nombre     String
-  unidad     String
-  detalles   DetalleSolicitud[]
+model Rol {
+  rolId       Int       @id @default(autoincrement())
+  nombre      String    @unique
+  descripcion String
+  estado      Boolean   @default(true)
+  Usuario     Usuario[]
+}
+
+model Servicentro {
+  servicentroId Int     @id @default(autoincrement())
+  nombre        String
+  ruc           String  @unique
+  direccion     String
+  telefono      String
+  estado        Boolean @default(true)
 }
 
 model SolicitudMaterial {
-  solicitudId Int                @id @default(autoincrement())
-  numero      String             @unique
-  ordenId     Int
-  fecha       DateTime
-  estado      String
-  detalles    DetalleSolicitud[]
-  orden       OrdenServicio      @relation(fields: [ordenId], references: [ordenId])
+  solicitudId      Int                @id @default(autoincrement())
+  numero           String             @unique
+  ordenId          Int
+  fecha            DateTime
+  estado           String
+  DetalleSolicitud DetalleSolicitud[]
+  OrdenServicio    OrdenServicio      @relation(fields: [ordenId], references: [ordenId])
 }
 
-model DetalleSolicitud {
-  detalleId   Int               @id @default(autoincrement())
-  solicitudId Int
-  materialId  Int
-  cantidad    Float
-  material    Material          @relation(fields: [materialId], references: [materialId])
-  solicitud   SolicitudMaterial @relation(fields: [solicitudId], references: [solicitudId])
+model Taller {
+  tallerId  Int     @id @default(autoincrement())
+  nombre    String
+  ruc       String  @unique
+  direccion String
+  telefono  String
+  estado    Boolean @default(true)
+}
+
+model TipoMantenimiento {
+  tipoId        Int             @id @default(autoincrement())
+  codigo        String          @unique
+  descripcion   String
+  OrdenServicio OrdenServicio[]
+}
+
+model Usuario {
+  usuarioId Int     @id @default(autoincrement())
+  nombres   String
+  apellidos String
+  email     String  @unique
+  password  String
+  rolId     Int
+  estado    Boolean @default(true)
+  Rol       Rol     @relation(fields: [rolId], references: [rolId])
+}
+
+model Vehiculo {
+  vehiculoId                   Int                            @id @default(autoincrement())
+  codigoPatrimonio             String                         @unique
+  placa                        String                         @unique
+  categoriaVehiculoId          Int
+  valorNuevo                   Decimal                        @db.Decimal(12, 2)
+  valorResidual                Decimal                        @db.Decimal(12, 2)
+  vidaUtilAnios                Int
+  estado                       String
+  Asignacion                   Asignacion[]
+  Conjunto                     Conjunto[]
+  CostoFijoMensual             CostoFijoMensual[]
+  CostoOperacionMensual        CostoOperacionMensual[]
+  CostoPromedioAnual           CostoPromedioAnual?
+  InventarioUnidad             InventarioUnidad[]
+  Llanta                       Llanta[]
+  MovimientoDiario             MovimientoDiario[]
+  OrdenServicio                OrdenServicio[]
+  RegistroMensualMantenimiento RegistroMensualMantenimiento[]
+  CategoriaVehiculo            CategoriaVehiculo              @relation(fields: [categoriaVehiculoId], references: [categoriaVehiculoId])
+  abastecimiento               abastecimiento[]
+}
+
+model abastecimiento {
+  abastecimientoId Int      @id @default(autoincrement())
+  numeroOrden      String   @unique
+  vehiculoId       Int
+  fecha            DateTime
+  tipoCombustible  String
+  galones          Float
+  costo            Decimal  @db.Decimal(12, 2)
+  kmVelocimetro    Float
+  Vehiculo         Vehiculo @relation(fields: [vehiculoId], references: [vehiculoId])
 }
