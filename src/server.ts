@@ -21,6 +21,7 @@ import tiposMantenimientoRoutes from './routes/tiposMantenimiento';
 import autorizacionesExternasRoutes from './routes/autorizacionesExternas';
 import tarjetasManoObraRoutes from './routes/tarjetasManoObra';
 import asignacionesRoutes from './routes/asignaciones';
+import reportesBirtRoutes from './routes/reportesBirt';
 import { requireAuth } from './middleware/auth';
 
 const app = express();
@@ -59,6 +60,7 @@ app.use('/api/tipos-mantenimiento', tiposMantenimientoRoutes);
 app.use('/api/autorizaciones-externas', autorizacionesExternasRoutes);
 app.use('/api/tarjetas-mano-obra', tarjetasManoObraRoutes);
 app.use('/api/asignaciones', asignacionesRoutes);
+app.use('/api/reportes', reportesBirtRoutes);
 
 const PORT = process.env.PORT || 3000;
 

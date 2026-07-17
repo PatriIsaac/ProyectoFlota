@@ -199,4 +199,106 @@ router.get('/sustitucion/:vehiculoId', async (req, res) => {
     }
 });
 
+// GET /api/costos/fijos — Obtener todos los costos fijos
+router.get('/fijos', async (req, res) => {
+    try {
+        const fijos = await prisma.costoFijoMensual.findMany({
+            include: { Vehiculo: true },
+            orderBy: { mesAnio: 'desc' },
+        });
+        res.json(fijos);
+    } catch (error) {
+        res.status(500).json({ error: 'Error al obtener costos fijos' });
+    }
+});
+
+// POST /api/costos/fijos — Crear un costo fijo
+router.post('/fijos', async (req, res) => {
+    try {
+        const { vehiculoId, mesAnio, cfp, cfv } = req.body;
+        const nuevo = await prisma.costoFijoMensual.create({
+            data: {
+                vehiculoId: Number(vehiculoId),
+                mesAnio,
+                cfp: Number(cfp),
+                cfv: Number(cfv),
+            },
+        });
+        res.json(nuevo);
+    } catch (error) {
+        res.status(500).json({ error: 'Error al crear costo fijo' });
+    }
+});
+
+// DELETE /api/costos/fijos/:id — Eliminar un costo fijo
+router.delete('/fijos/:id', async (req, res) => {
+    try {
+        const cfmId = Number(req.params.id);
+        await prisma.costoFijoMensual.delete({
+            where: { cfmId },
+        });
+        res.sendStatus(204);
+    } catch (error) {
+        res.status(500).json({ error: 'Error al eliminar costo fijo' });
+    }
+});
+
+// GET /api/costos/operacion — Obtener todos los costos variables/operacionales
+router.get('/operacion', async (req, res) => {
+    try {
+        const operacion = await prisma.costoOperacionMensual.findMany({
+            include: { Vehiculo: true },
+            orderBy: { mesAnio: 'desc' },
+        });
+        res.json(operacion);
+    } catch (error) {
+        res.status(500).json({ error: 'Error al obtener costos de operacion' });
+    }
+});
+
+// POST /api/costos/operacion — Crear costo variable manually
+router.post('/operacion', async (req, res) => {
+    try {
+        const { vehiculoId, mesAnio, kmHoras, cvv, ckv, consumo, iuv } = req.body;
+        const nuevo = await prisma.costoOperacionMensual.create({
+            data: {
+                vehiculoId: Number(vehiculoId),
+                mesAnio,
+                diasUtiles: 0,
+                km: Number(kmHoras),
+                horas: 0,
+                combustibleGalones: Number(consumo),
+                combustibleCosto: 0,
+                lubricanteGalones: 0,
+                lubricanteCosto: 0,
+                llantasNuevasCosto: 0,
+                llantasReencauchadasCosto: 0,
+                gastosLavado: 0,
+                gastosViaje: 0,
+                cvv: Number(cvv),
+                ckv: Number(ckv),
+                consumo: Number(consumo),
+                iuv: Number(iuv),
+            },
+        });
+        res.json(nuevo);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Error al crear costo variable' });
+    }
+});
+
+// DELETE /api/costos/operacion/:id — Eliminar un costo variable
+router.delete('/operacion/:id', async (req, res) => {
+    try {
+        const comId = Number(req.params.id);
+        await prisma.costoOperacionMensual.delete({
+            where: { comId },
+        });
+        res.sendStatus(204);
+    } catch (error) {
+        res.status(500).json({ error: 'Error al eliminar costo variable' });
+    }
+});
+
 export default router;

@@ -55,6 +55,8 @@ Crea un archivo `.env` en la raíz (no se versiona):
 DATABASE_URL="postgresql://postgres:TU_PASSWORD@localhost:5432/flotasys?schema=public"
 JWT_SECRET="cualquier-cadena-larga-y-secreta"
 PORT=3000
+BIRT_PROJECT_DIR="C:/ruta/a/ReportesBIRT" 
+# Importante: Usa barras normales (/) en BIRT_PROJECT_DIR incluso en Windows para evitar que dotenv malinterprete los escapes (como \n).
 ```
 
 Genera el cliente Prisma (obligatorio antes de correr nada — el cliente generado vive en
