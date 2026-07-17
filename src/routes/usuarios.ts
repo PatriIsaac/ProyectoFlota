@@ -1,8 +1,12 @@
 import { Router } from 'express';
 import bcrypt from 'bcrypt';
 import { prisma } from '../server';
+import { requireRole } from '../middleware/auth';
 
 const router = Router();
+
+// Gestión de usuarios y roles es sensible (incluye asignar privilegios): solo Administrador.
+router.use(requireRole('Administrador'));
 
 // ========================== ROLES ==========================
 router.get('/roles', async (req, res) => {
@@ -26,7 +30,7 @@ router.post('/roles', async (req, res) => {
 
 router.delete('/roles/:id', async (req, res) => {
     try {
-        await prisma.rol.delete({ where: { rolId: Number(req.params.id) } });
+        await prisma.rol.update({ where: { rolId: Number(req.params.id) }, data: { estado: false } });
         res.status(204).send();
     } catch (error) {
         res.status(400).json({ error: 'Error al eliminar rol' });
@@ -93,7 +97,7 @@ router.patch('/:id', async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
     try {
-        await prisma.usuario.delete({ where: { usuarioId: Number(req.params.id) } });
+        await prisma.usuario.update({ where: { usuarioId: Number(req.params.id) }, data: { estado: false } });
         res.status(204).send();
     } catch (error) {
         res.status(400).json({ error: 'Error al eliminar' });

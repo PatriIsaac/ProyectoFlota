@@ -11,6 +11,11 @@ export interface VariablesControl {
     mantTerceros: number;     // VA122 05 - costo mantenimiento terceros
     kmParametro: number;      // VA122 06 - KRP, km parámetro de la categoría
     horasParametro: number;   // VA122 07 - HUP, horas parámetro de la categoría
+    lubricanteCosto: number;         // línea (5b) del formulario MA 122 03 01
+    llantasNuevasCosto: number;      // línea (7a)
+    llantasReencauchadasCosto: number; // línea (7b)
+    gastosLavado: number;            // línea (8)
+    gastosViaje: number;             // línea (9)
 }
 
 export interface Indicadores {
@@ -30,10 +35,13 @@ export function calcularIUV(krv: number, huv: number, krp: number, hup: number):
 
 export function calcularIndicadores(v: VariablesControl, cfp: number, cfv: number): Indicadores {
     const K = v.totalKm;
-    // ponytail: CVV solo incluye los costos variables que el modelo de datos hoy
-    // almacena (mantenimiento + combustible). Llantas/lavado/viaje (4b..9 del
-    // manual) se suman aquí cuando existan esas tablas.
-    const costosVariables = v.mantPropio + v.mantTerceros + v.costoCombustible;
+    // CVV = [(4b)+(5b)+(6)+(7a)+(7b)+(8)+(9)] / K, líneas del formulario MA 122 03 01.
+    const costosVariables =
+        v.costoCombustible +
+        v.lubricanteCosto +
+        v.mantPropio + v.mantTerceros +
+        v.llantasNuevasCosto + v.llantasReencauchadasCosto +
+        v.gastosLavado + v.gastosViaje;
     const cvv = K > 0 ? costosVariables / K : 0;
     const ckv = K > 0 ? (cfp + cfv) / K + cvv : 0;
     const consumo = v.totalGalones > 0 ? K / v.totalGalones : 0;
@@ -61,8 +69,8 @@ export interface FilaCpa {
 // El valor de rescate se modela con depreciación geométrica (la unidad pierde
 // más valor al principio), de modo que el costo de capital por año DECRECE
 // mientras el mantenimiento CRECE: la curva tiene un mínimo = edad óptima.
-// ponytail: factorCrecimiento y mantenimientoAnioBase son knobs de calibración;
-// con datos históricos por año se reemplaza el modelo de crecimiento por reales.
+// factorCrecimiento y mantenimientoAnioBase son parámetros de calibración del modelo;
+// con datos históricos por año se reemplaza el crecimiento estimado por valores reales.
 export function curvaCostoPromedioAnual(opts: {
     valorNuevo: number;
     valorResidual: number;
@@ -96,10 +104,12 @@ if (require.main === module) {
     const ind = calcularIndicadores({
         totalKm: 1000, totalHoras: 100, totalGalones: 50, costoCombustible: 200,
         mantPropio: 60, mantTerceros: 40, kmParametro: 2000, horasParametro: 200,
+        lubricanteCosto: 20, llantasNuevasCosto: 15, llantasReencauchadasCosto: 5,
+        gastosLavado: 8, gastosViaje: 12,
     }, 100, 50);
     cerca(ind.consumo, 20);              // 1000 km / 50 gal
-    cerca(ind.cvv, 0.3);                 // (60+40+200)/1000
-    cerca(ind.ckv, 0.45);                // (100+50)/1000 + 0.3
+    cerca(ind.cvv, 0.36);                // (200+20+60+40+15+5+8+12)/1000
+    cerca(ind.ckv, 0.51);                // (100+50)/1000 + 0.36
     cerca(ind.pctTerceros, 0.4);         // 40/(60+40)
     cerca(ind.iuv, 0.5);                 // (1000/2000 + 100/200)/2
 
@@ -107,6 +117,8 @@ if (require.main === module) {
     const cero = calcularIndicadores({
         totalKm: 0, totalHoras: 0, totalGalones: 0, costoCombustible: 0,
         mantPropio: 0, mantTerceros: 0, kmParametro: 100, horasParametro: 10,
+        lubricanteCosto: 0, llantasNuevasCosto: 0, llantasReencauchadasCosto: 0,
+        gastosLavado: 0, gastosViaje: 0,
     }, 10, 5);
     assert.ok(Number.isFinite(cero.ckv) && cero.ckv === 0);
 

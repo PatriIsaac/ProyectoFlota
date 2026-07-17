@@ -13,6 +13,15 @@ import mantenimientosRoutes from './routes/mantenimientos';
 import usuariosRoutes from './routes/usuarios';
 import costosRoutes from './routes/costos';
 import indicadoresRoutes from './routes/indicadores';
+import areasRoutes from './routes/areas';
+import servicentrosRoutes from './routes/servicentros';
+import talleresRoutes from './routes/talleres';
+import categoriasVehiculoRoutes from './routes/categoriasVehiculo';
+import tiposMantenimientoRoutes from './routes/tiposMantenimiento';
+import autorizacionesExternasRoutes from './routes/autorizacionesExternas';
+import tarjetasManoObraRoutes from './routes/tarjetasManoObra';
+import asignacionesRoutes from './routes/asignaciones';
+import { requireAuth } from './middleware/auth';
 
 const app = express();
 
@@ -29,16 +38,27 @@ app.get('/', (req, res) => {
     res.json({ message: 'FleetSys API is running' });
 });
 
+// Login es la única ruta pública; todo lo demás exige JWT.
+app.use('/api/auth', authRoutes);
+app.use('/api', requireAuth);
+
 // Rutas de entidades
 app.use('/api/vehiculos', vehiculosRoutes);
 app.use('/api/conductores', conductoresRoutes);
-app.use('/api/auth', authRoutes);
 app.use('/api/movimientos', movimientosRoutes);
 app.use('/api/abastecimientos', abastecimientosRoutes);
 app.use('/api/mantenimientos', mantenimientosRoutes);
 app.use('/api/usuarios', usuariosRoutes);
 app.use('/api/costos', costosRoutes);
 app.use('/api/indicadores', indicadoresRoutes);
+app.use('/api/areas', areasRoutes);
+app.use('/api/servicentros', servicentrosRoutes);
+app.use('/api/talleres', talleresRoutes);
+app.use('/api/categorias-vehiculo', categoriasVehiculoRoutes);
+app.use('/api/tipos-mantenimiento', tiposMantenimientoRoutes);
+app.use('/api/autorizaciones-externas', autorizacionesExternasRoutes);
+app.use('/api/tarjetas-mano-obra', tarjetasManoObraRoutes);
+app.use('/api/asignaciones', asignacionesRoutes);
 
 const PORT = process.env.PORT || 3000;
 

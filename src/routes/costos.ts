@@ -19,8 +19,27 @@ function rangoMes(mesAnio: string): { inicio: Date; fin: Date } | null {
     return { inicio: new Date(Date.UTC(anio, mes - 1, 1)), fin: new Date(Date.UTC(anio, mes, 1)) };
 }
 
+// Gastos que el manual (F1T02 §4.2, líneas 5b-9) deja a criterio de "autorización especial" de
+// cada EPS: no tienen tabla de origen propia, se registran manualmente al calcular el mes.
+export interface GastosManuales {
+    diasUtiles: number;
+    lubricanteGalones: number;
+    lubricanteCosto: number;
+    llantasNuevasCosto: number;
+    llantasReencauchadasCosto: number;
+    gastosLavado: number;
+    gastosViaje: number;
+}
+
+const gastosManualesDefault = (): GastosManuales => ({
+    diasUtiles: 0, lubricanteGalones: 0, lubricanteCosto: 0,
+    llantasNuevasCosto: 0, llantasReencauchadasCosto: 0, gastosLavado: 0, gastosViaje: 0,
+});
+
 // Reúne las variables de control (VA122 0x) de un vehículo en un mes.
-async function obtenerVariablesControl(vehiculoId: number, mesAnio: string, rango: { inicio: Date; fin: Date }): Promise<VariablesControl> {
+async function obtenerVariablesControl(
+    vehiculoId: number, mesAnio: string, rango: { inicio: Date; fin: Date }, gastos: GastosManuales
+): Promise<VariablesControl> {
     const vehiculo = await prisma.vehiculo.findUnique({
         where: { vehiculoId },
         include: { CategoriaVehiculo: { include: { ParametroUtilizacion: true } } },
@@ -51,6 +70,11 @@ async function obtenerVariablesControl(vehiculoId: number, mesAnio: string, rang
         mantTerceros: regMant ? Number(regMant.terceros) : 0,
         kmParametro: param?.kmParametro ?? 0,
         horasParametro: param?.horasParametro ?? 0,
+        lubricanteCosto: gastos.lubricanteCosto,
+        llantasNuevasCosto: gastos.llantasNuevasCosto,
+        llantasReencauchadasCosto: gastos.llantasReencauchadasCosto,
+        gastosLavado: gastos.gastosLavado,
+        gastosViaje: gastos.gastosViaje,
     };
 }
 
@@ -65,7 +89,8 @@ router.post('/calcular', async (req, res) => {
             return res.status(400).json({ error: 'vehiculoId y mesAnio ("YYYY-MM") son obligatorios' });
         }
 
-        const variables = await obtenerVariablesControl(vehiculoId, mesAnio, rango);
+        const gastos: GastosManuales = { ...gastosManualesDefault(), ...req.body.gastosManuales };
+        const variables = await obtenerVariablesControl(vehiculoId, mesAnio, rango, gastos);
 
         const costoFijo = await prisma.costoFijoMensual.findFirst({ where: { vehiculoId, mesAnio } });
         const provisional = !costoFijo; // flujo alterno 3a: sin CFP/CFV el cálculo es PROVISIONAL
@@ -79,7 +104,17 @@ router.post('/calcular', async (req, res) => {
         const datos = {
             vehiculoId,
             mesAnio,
-            kmHoras: variables.totalKm,
+            diasUtiles: gastos.diasUtiles,
+            km: variables.totalKm,
+            horas: variables.totalHoras,
+            combustibleGalones: variables.totalGalones,
+            combustibleCosto: variables.costoCombustible,
+            lubricanteGalones: gastos.lubricanteGalones,
+            lubricanteCosto: gastos.lubricanteCosto,
+            llantasNuevasCosto: gastos.llantasNuevasCosto,
+            llantasReencauchadasCosto: gastos.llantasReencauchadasCosto,
+            gastosLavado: gastos.gastosLavado,
+            gastosViaje: gastos.gastosViaje,
             cvv: ind.cvv,
             ckv: ind.ckv,
             consumo: ind.consumo,

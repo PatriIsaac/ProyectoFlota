@@ -5,7 +5,7 @@ const router = Router();
 
 router.get('/', async (req, res) => {
     try {
-        const data = await prisma.abastecimiento.findMany({ include: { vehiculo: true } });
+        const data = await prisma.abastecimiento.findMany({ include: { Vehiculo: true, Servicentro: true } });
         res.json(data);
     } catch (error) {
         res.status(500).json({ error: 'Error' });
@@ -14,7 +14,7 @@ router.get('/', async (req, res) => {
 
 router.get('/:id', async (req, res) => {
     try {
-        const data = await prisma.abastecimiento.findUnique({ where: { abastecimientoId: Number(req.params.id) }, include: { vehiculo: true } });
+        const data = await prisma.abastecimiento.findUnique({ where: { abastecimientoId: Number(req.params.id) }, include: { Vehiculo: true, Servicentro: true } });
         if (data) res.json(data);
         else res.status(404).json({ error: 'No encontrado' });
     } catch (error) {
@@ -67,7 +67,7 @@ router.patch('/:id', async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
     try {
-        await prisma.abastecimiento.delete({ where: { abastecimientoId: Number(req.params.id) } });
+        await prisma.abastecimiento.update({ where: { abastecimientoId: Number(req.params.id) }, data: { activo: false } });
         res.status(204).send();
     } catch (error) {
         res.status(400).json({ error: 'Error al eliminar' });

@@ -11,10 +11,10 @@ router.get('/dashboard', async (req, res) => {
     try {
         const vehiculos = await prisma.vehiculo.findMany({ select: { vehiculoId: true, estado: true } });
 
-        // Disponibilidad por estado.
+        // Disponibilidad por estado (EstadoVehiculo es un enum: comparación exacta, sin normalizar texto).
         const porEstado: Record<string, number> = {};
         for (const v of vehiculos) porEstado[v.estado] = (porEstado[v.estado] ?? 0) + 1;
-        const disponibles = vehiculos.filter((v) => v.estado.toLowerCase() === 'operativo' || v.estado.toLowerCase() === 'disponible').length;
+        const disponibles = vehiculos.filter((v) => v.estado === 'Operativo').length;
 
         // Último costo operacional calculado por vehículo (para promediar la flota).
         const costos = await prisma.costoOperacionMensual.findMany({ orderBy: { mesAnio: 'asc' } });

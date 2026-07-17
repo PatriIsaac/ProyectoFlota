@@ -37,7 +37,6 @@ async function main() {
     const pass = await bcrypt.hash('123456', 10);
     const usersData = [
         { nombres: 'Admin', apellidos: 'Sistema', email: 'admin@empresa.com', rol: 'Administrador' },
-        { nombres: 'Patri', apellidos: 'Isaac', email: 'patrisaacmm@gmail.com', rol: 'Administrador' },
         { nombres: 'Carlos', apellidos: 'Gerente', email: 'gerencia@empresa.com', rol: 'Gerencia' },
         { nombres: 'Ana', apellidos: 'Costos', email: 'costos@empresa.com', rol: 'Analista de Costos' },
         { nombres: 'Luis', apellidos: 'Mantenimiento', email: 'mantenimiento@empresa.com', rol: 'Jefe de Mantenimiento' },
@@ -77,7 +76,8 @@ async function main() {
     const areas = ['Operaciones', 'Ventas', 'Logística', 'Gerencia General'];
     const areasMap = new Map();
     for (const a of areas) {
-        // En Prisma no pusiste unique a Area.nombre, buscaremos el primero o crearemos
+        // Area.nombre no tiene restricción unique en el schema; se busca antes de crear
+        // para que el seed sea idempotente igual que los demás catálogos.
         let area = await prisma.area.findFirst({ where: { nombre: a } });
         if (!area) {
             area = await prisma.area.create({ data: { nombre: a } });
@@ -95,13 +95,21 @@ async function main() {
         });
     }
 
+    const tallerMap = new Map<string, number>();
+    for (let i = 0; i < talleres.length; i++) {
+        const t = await prisma.taller.findUniqueOrThrow({ where: { ruc: `100000000${i}` } });
+        tallerMap.set(talleres[i], t.tallerId);
+    }
+
     const grifos = ['Grifo Primax', 'Grifo Repsol', 'Grifo Petroperu'];
+    const servicentroMap = new Map<string, number>();
     for (let i = 0; i < grifos.length; i++) {
-        await prisma.servicentro.upsert({
+        const s = await prisma.servicentro.upsert({
             where: { ruc: `200000000${i}` },
             update: {},
             create: { nombre: grifos[i], ruc: `200000000${i}`, direccion: 'Ruta ' + i, telefono: '555-111' + i, estado: true }
         });
+        servicentroMap.set(grifos[i], s.servicentroId);
     }
     console.log('Catálogos base listos.');
 
@@ -185,6 +193,7 @@ async function main() {
                 create: {
                     numeroOrden: `ABS-${v}-${i}`,
                     vehiculoId: vehiculosMap.get(v),
+                    servicentroId: servicentroMap.get(grifos[i % grifos.length])!,
                     fecha: new Date(`2024-05-${(i * 5).toString().padStart(2, '0')}T10:00:00Z`),
                     tipoCombustible: 'Diésel',
                     galones: 15 + Math.random() * 10,
@@ -214,14 +223,14 @@ async function main() {
 
     // 12. ORDENES DE SERVICIO
     for (let v = 1; v <= 3; v++) {
-        await prisma.ordenServicio.upsert({
+        const orden = await prisma.ordenServicio.upsert({
             where: { numero: `OS-2024-${v.toString().padStart(4, '0')}` },
             update: {},
             create: {
                 numero: `OS-2024-${v.toString().padStart(4, '0')}`,
                 vehiculoId: vehiculosMap.get(v),
                 tipoId: tipoMantMap.get('PM-1'),
-                taller: 'Taller Central',
+                tallerId: tallerMap.get('Taller Central')!,
                 fechaEntrada: new Date('2024-05-15T08:00:00Z'),
                 fechaSalida: new Date('2024-05-16T17:00:00Z'),
                 kilometraje: 12500,
@@ -232,9 +241,48 @@ async function main() {
                 }
             }
         });
+
+        // MA 122 02 04 - Tarjeta de Mano de Obra del mecánico que atendió la orden.
+        await prisma.tarjetaManoObra.create({
+            data: {
+                ordenId: orden.ordenId,
+                mecanicoNombre: 'Mecánico Piloto',
+                fecha: new Date('2024-05-15T08:00:00Z'),
+                codigoServicio: 'RV-01',
+                horaInicio: new Date('2024-05-15T08:00:00Z'),
+                horaFin: new Date('2024-05-15T12:00:00Z'),
+                tiempoUtilizado: 4,
+            }
+        });
     }
     console.log('Mantenimientos listos.');
-    
+
+    // 13. AUTORIZACION DE SERVICIO EXTERNO (MA 122 02 02) para una orden de ejemplo
+    const ordenExterna = await prisma.ordenServicio.upsert({
+        where: { numero: 'OS-2024-0099' },
+        update: {},
+        create: {
+            numero: 'OS-2024-0099',
+            vehiculoId: vehiculosMap.get(4),
+            tipoId: tipoMantMap.get('CR-1'),
+            tallerId: tallerMap.get('Taller Autorizado Toyota')!,
+            fechaEntrada: new Date('2024-05-20T08:00:00Z'),
+            kilometraje: 15200,
+        }
+    });
+    await prisma.autorizacionServicioExterno.upsert({
+        where: { numero: 'ASE-2024-0001' },
+        update: {},
+        create: {
+            numero: 'ASE-2024-0001',
+            ordenId: ordenExterna.ordenId,
+            fechaEntrada: new Date('2024-05-20T08:00:00Z'),
+            valorPresupuestado: 850,
+            nombreResponsable: 'Jefe de Mantenimiento',
+        }
+    });
+    console.log('Autorizaciones de servicio externo listas.');
+
     console.log('¡Seed completado con éxito!');
     process.exit(0);
 }

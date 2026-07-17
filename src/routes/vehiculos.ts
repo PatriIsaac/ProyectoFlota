@@ -8,7 +8,7 @@ router.get('/', async (req, res) => {
     try {
         const vehiculos = await prisma.vehiculo.findMany({
             include: {
-                categoriaVehiculo: true
+                CategoriaVehiculo: true
             }
         });
         res.json(vehiculos);
@@ -25,7 +25,7 @@ router.get('/:id', async (req, res) => {
         const vehiculo = await prisma.vehiculo.findUnique({
             where: { vehiculoId: Number(id) },
             include: {
-                categoriaVehiculo: true
+                CategoriaVehiculo: true
             }
         });
         
@@ -68,12 +68,13 @@ router.patch('/:id', async (req, res) => {
     }
 });
 
-// Eliminar un vehículo
+// Eliminar un vehículo (borrado lógico: conserva el historial de movimientos/costos)
 router.delete('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        await prisma.vehiculo.delete({
-            where: { vehiculoId: Number(id) }
+        await prisma.vehiculo.update({
+            where: { vehiculoId: Number(id) },
+            data: { activo: false }
         });
         res.status(204).send();
     } catch (error) {

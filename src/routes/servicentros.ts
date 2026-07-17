@@ -3,44 +3,39 @@ import { prisma } from '../server';
 
 const router = Router();
 
-// Obtener todos
 router.get('/', async (req, res) => {
     try {
-        const conductores = await prisma.conductor.findMany();
-        res.json(conductores);
+        const data = await prisma.servicentro.findMany();
+        res.json(data);
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Error al obtener conductores' });
+        res.status(500).json({ error: 'Error al obtener servicentros' });
     }
 });
 
-// Obtener uno
 router.get('/:id', async (req, res) => {
     try {
-        const conductor = await prisma.conductor.findUnique({ where: { conductorId: Number(req.params.id) } });
-        if (conductor) res.json(conductor);
+        const data = await prisma.servicentro.findUnique({ where: { servicentroId: Number(req.params.id) } });
+        if (data) res.json(data);
         else res.status(404).json({ error: 'No encontrado' });
     } catch (error) {
         res.status(500).json({ error: 'Error' });
     }
 });
 
-// Crear
 router.post('/', async (req, res) => {
     try {
-        const nuevo = await prisma.conductor.create({ data: req.body });
+        const nuevo = await prisma.servicentro.create({ data: req.body });
         res.status(201).json(nuevo);
     } catch (error) {
         res.status(400).json({ error: 'Error al crear' });
     }
 });
 
-// Actualizar
 router.patch('/:id', async (req, res) => {
     try {
-        const actualizado = await prisma.conductor.update({
-            where: { conductorId: Number(req.params.id) },
-            data: req.body
+        const actualizado = await prisma.servicentro.update({
+            where: { servicentroId: Number(req.params.id) },
+            data: req.body,
         });
         res.json(actualizado);
     } catch (error) {
@@ -48,10 +43,9 @@ router.patch('/:id', async (req, res) => {
     }
 });
 
-// Eliminar (borrado lógico)
 router.delete('/:id', async (req, res) => {
     try {
-        await prisma.conductor.update({ where: { conductorId: Number(req.params.id) }, data: { activo: false } });
+        await prisma.servicentro.update({ where: { servicentroId: Number(req.params.id) }, data: { estado: false } });
         res.status(204).send();
     } catch (error) {
         res.status(400).json({ error: 'Error al eliminar' });
