@@ -76,6 +76,8 @@ model Conjunto {
   tipo       String
   estado     String
   vehiculoId Int
+  costo      Float?
+  fechaInstalacion DateTime?
   creadoEn   DateTime @default(now())
   actualizadoEn DateTime @updatedAt
   Vehiculo   Vehiculo @relation(fields: [vehiculoId], references: [vehiculoId])
@@ -169,6 +171,8 @@ model DocumentoPersonal {
   tipo        String
   vigencia    DateTime
   fechaSubida DateTime  @default(now())
+  archivoUrl  String?
+  nombreArchivo String?
   creadoEn    DateTime  @default(now())
   actualizadoEn DateTime @updatedAt
   Conductor   Conductor @relation(fields: [conductorId], references: [conductorId])
@@ -190,8 +194,9 @@ model InventarioUnidad {
   inventarioId       Int      @id @default(autoincrement())
   vehiculoId         Int
   fecha              DateTime
-  lecturaVelocimetro Float
+  kmHorasLectura     Float
   estadoGeneral      String
+  observaciones      String?
   creadoEn           DateTime @default(now())
   actualizadoEn      DateTime @updatedAt
   Vehiculo           Vehiculo @relation(fields: [vehiculoId], references: [vehiculoId])
@@ -206,6 +211,7 @@ model Llanta {
   dimension  String
   posicion   String
   estado     String
+  costo      Float?
   creadoEn   DateTime @default(now())
   actualizadoEn DateTime @updatedAt
   Vehiculo   Vehiculo @relation(fields: [vehiculoId], references: [vehiculoId])
@@ -218,6 +224,9 @@ model Material {
   codigo           String             @unique
   nombre           String
   unidad           String
+  stockActual      Float              @default(0)
+  stockMinimo      Float              @default(0)
+  costoUnitario    Float              @default(0)
   activo           Boolean            @default(true)
   creadoEn         DateTime           @default(now())
   actualizadoEn    DateTime           @updatedAt

@@ -24,10 +24,19 @@ router.get('/:id', async (req, res) => {
 
 router.post('/', async (req, res) => {
     try {
-        const nuevo = await prisma.abastecimiento.create({ data: req.body });
+        const data = { ...req.body };
+        if (data.vehiculoId) data.vehiculoId = Number(data.vehiculoId);
+        if (data.servicentroId) data.servicentroId = Number(data.servicentroId);
+        if (data.galones) data.galones = Number(data.galones);
+        if (data.costo) data.costo = Number(data.costo);
+        if (data.kmVelocimetro) data.kmVelocimetro = Number(data.kmVelocimetro);
+        if (data.fecha) data.fecha = new Date(data.fecha);
+
+        const nuevo = await prisma.abastecimiento.create({ data });
         res.status(201).json(nuevo);
     } catch (error) {
-        res.status(400).json({ error: 'Error al crear' });
+        console.error("Error creating Abastecimiento:", error);
+        res.status(400).json({ error: 'Error al crear', details: error });
     }
 });
 

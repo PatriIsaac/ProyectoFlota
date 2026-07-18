@@ -1,5 +1,10 @@
 import { Router } from 'express';
 import { prisma } from '../server';
+import multer from 'multer';
+import csv from 'csv-parser';
+import fs from 'fs';
+
+const upload = multer({ dest: 'uploads/' });
 import {
     calcularIndicadores,
     depreciacionAnual,
@@ -228,6 +233,38 @@ router.post('/fijos', async (req, res) => {
     } catch (error) {
         res.status(500).json({ error: 'Error al crear costo fijo' });
     }
+});
+
+// POST /api/costos/fijos/importar — Importar archivo CSV
+router.post('/fijos/importar', upload.single('file'), (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ error: 'No se subió ningún archivo' });
+    }
+
+    const results: any[] = [];
+    fs.createReadStream(req.file.path)
+        .pipe(csv())
+        .on('data', (data) => results.push(data))
+        .on('end', async () => {
+            try {
+                // Se asume CSV con cabeceras: vehiculoId, mesAnio, cfp, cfv
+                for (const row of results) {
+                    await prisma.costoFijoMensual.create({
+                        data: {
+                            vehiculoId: Number(row.vehiculoId),
+                            mesAnio: row.mesAnio,
+                            cfp: Number(row.cfp),
+                            cfv: Number(row.cfv)
+                        }
+                    });
+                }
+                fs.unlinkSync(req.file!.path); // limpiar archivo temporal
+                res.status(201).json({ message: 'Costos fijos importados exitosamente', count: results.length });
+            } catch (error) {
+                console.error('Error procesando CSV:', error);
+                res.status(500).json({ error: 'Error procesando el archivo CSV' });
+            }
+        });
 });
 
 // DELETE /api/costos/fijos/:id — Eliminar un costo fijo

@@ -6,8 +6,14 @@ const router = Router();
 // Obtener todos
 router.get('/', async (req, res) => {
     try {
-        const conductores = await prisma.conductor.findMany();
-        res.json(conductores);
+        const conductores = await prisma.conductor.findMany({
+            include: { DocumentoPersonal: true }
+        });
+        const mapped = conductores.map(c => ({
+            ...c,
+            documentos: c.DocumentoPersonal
+        }));
+        res.json(mapped);
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Error al obtener conductores' });
@@ -17,9 +23,16 @@ router.get('/', async (req, res) => {
 // Obtener uno
 router.get('/:id', async (req, res) => {
     try {
-        const conductor = await prisma.conductor.findUnique({ where: { conductorId: Number(req.params.id) } });
-        if (conductor) res.json(conductor);
-        else res.status(404).json({ error: 'No encontrado' });
+        const conductor = await prisma.conductor.findUnique({ 
+            where: { conductorId: Number(req.params.id) },
+            include: { DocumentoPersonal: true }
+        });
+        if (conductor) {
+            const mapped = { ...conductor, documentos: conductor.DocumentoPersonal };
+            res.json(mapped);
+        } else {
+            res.status(404).json({ error: 'No encontrado' });
+        }
     } catch (error) {
         res.status(500).json({ error: 'Error' });
     }
